@@ -1,0 +1,17 @@
+.DS_Store
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+/src/main/docker/postgres-data/
+/src/main/docker/prod/postgres-data/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### VS Code ###
+.vscode/
+
