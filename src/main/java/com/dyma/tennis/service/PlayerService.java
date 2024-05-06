@@ -5,6 +5,8 @@ import com.dyma.tennis.PlayerToSave;
 import com.dyma.tennis.Rank;
 import com.dyma.tennis.data.PlayerEntity;
 import com.dyma.tennis.data.PlayerRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ import java.util.stream.Collectors;
 @Service
 public class PlayerService {
 
+    private final Logger log = LoggerFactory.getLogger(PlayerService.class);
+
     @Autowired
     private final PlayerRepository playerRepository;
 
@@ -25,6 +29,7 @@ public class PlayerService {
     }
 
     public List<Player> getAllPlayers() {
+        log.info("Invoking getAllPlayers()");
         try {
             return playerRepository.findAll().stream()
                     .map(player -> new Player(
@@ -36,13 +41,16 @@ public class PlayerService {
                     .sorted(Comparator.comparing(player -> player.rank().position()))
                     .collect(Collectors.toList());
         } catch (DataAccessException e) {
+            log.error("Could not retrieve players", e);
             throw new PlayerDataRetrievalException(e);
         }
     }
 
     public Player getByLastName(String lastName) {
+        log.info("Invoking getByLastName with lastName={}", lastName);
         Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(lastName);
         if (player.isEmpty()) {
+            log.warn("Could not find player with lastName={}", lastName);
             throw new PlayerNotFoundException(lastName);
         }
         return new Player(
@@ -54,8 +62,10 @@ public class PlayerService {
     }
 
     public Player create(PlayerToSave playerToSave) {
+        log.info("Invoking create with playerToSave={}", playerToSave);
         Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
         if (player.isPresent()) {
+            log.warn("Player to create with lastName={} already exists", playerToSave.lastName());
             throw new PlayerAlreadyExistsException(playerToSave.lastName());
         }
 
@@ -75,13 +85,16 @@ public class PlayerService {
 
             return getByLastName(registeredPlayer.getLastName());
         } catch (DataAccessException e) {
+            log.error("Could not create player={}", playerToSave, e);
             throw new PlayerDataRetrievalException(e);
         }
     }
 
     public Player update(PlayerToSave playerToSave) {
+        log.info("Invoking update with playerToSave={}", playerToSave);
         Optional<PlayerEntity> playerToUpdate = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
         if (playerToUpdate.isEmpty()) {
+            log.warn("Player to update with lastName={} could not be found", playerToSave.lastName());
             throw new PlayerNotFoundException(playerToSave.lastName());
         }
 
@@ -97,13 +110,16 @@ public class PlayerService {
 
             return getByLastName(updatedPlayer.getLastName());
         } catch (DataAccessException e) {
+            log.error("Could not update player={}", playerToSave, e);
             throw new PlayerDataRetrievalException(e);
         }
     }
 
     public void delete(String lastName) {
+        log.info("Invoking delete with lastName={}", lastName);
         Optional<PlayerEntity> playerDelete = playerRepository.findOneByLastNameIgnoreCase(lastName);
         if (playerDelete.isEmpty()) {
+            log.warn("Player to delete with lastName={} could not be found", lastName);
             throw new PlayerNotFoundException(lastName);
         }
 
@@ -115,6 +131,7 @@ public class PlayerService {
             playerRepository.saveAll(newRanking);
 
         } catch (DataAccessException e) {
+            log.error("Could not delete player with lastName={}", lastName, e);
             throw new PlayerDataRetrievalException(e);
         }
     }
