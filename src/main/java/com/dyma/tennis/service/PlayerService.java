@@ -48,28 +48,33 @@ public class PlayerService {
 
     public Player getByLastName(String lastName) {
         log.info("Invoking getByLastName with lastName={}", lastName);
-        Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(lastName);
-        if (player.isEmpty()) {
-            log.warn("Could not find player with lastName={}", lastName);
-            throw new PlayerNotFoundException(lastName);
+        try {
+            Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(lastName);
+            if (player.isEmpty()) {
+                log.warn("Player to retrieve with lastName={} could not be found", lastName);
+                throw new PlayerNotFoundException(lastName);
+            }
+            return new Player(
+                    player.get().getFirstName(),
+                    player.get().getLastName(),
+                    player.get().getBirthDate(),
+                    new Rank(player.get().getRank(), player.get().getPoints())
+            );
+        } catch (DataAccessException e) {
+            log.error("Could not retrieve player with lastName={}", lastName);
+            throw new PlayerDataRetrievalException(e);
         }
-        return new Player(
-                player.get().getFirstName(),
-                player.get().getLastName(),
-                player.get().getBirthDate(),
-                new Rank(player.get().getRank(), player.get().getPoints())
-        );
     }
 
     public Player create(PlayerToSave playerToSave) {
         log.info("Invoking create with playerToSave={}", playerToSave);
-        Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
-        if (player.isPresent()) {
-            log.warn("Player to create with lastName={} already exists", playerToSave.lastName());
-            throw new PlayerAlreadyExistsException(playerToSave.lastName());
-        }
-
         try {
+            Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
+            if (player.isPresent()) {
+                log.warn("Player to create with lastName={} already exists", playerToSave.lastName());
+                throw new PlayerAlreadyExistsException(playerToSave.lastName());
+            }
+
             PlayerEntity playerToRegister = new PlayerEntity(
                     playerToSave.lastName(),
                     playerToSave.firstName(),
@@ -92,13 +97,13 @@ public class PlayerService {
 
     public Player update(PlayerToSave playerToSave) {
         log.info("Invoking update with playerToSave={}", playerToSave);
-        Optional<PlayerEntity> playerToUpdate = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
-        if (playerToUpdate.isEmpty()) {
-            log.warn("Player to update with lastName={} could not be found", playerToSave.lastName());
-            throw new PlayerNotFoundException(playerToSave.lastName());
-        }
-
         try {
+            Optional<PlayerEntity> playerToUpdate = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
+            if (playerToUpdate.isEmpty()) {
+                log.warn("Player to update with lastName={} could not be found", playerToSave.lastName());
+                throw new PlayerNotFoundException(playerToSave.lastName());
+            }
+
             playerToUpdate.get().setFirstName(playerToSave.firstName());
             playerToUpdate.get().setBirthDate(playerToSave.birthDate());
             playerToUpdate.get().setPoints(playerToSave.points());
@@ -117,13 +122,13 @@ public class PlayerService {
 
     public void delete(String lastName) {
         log.info("Invoking delete with lastName={}", lastName);
-        Optional<PlayerEntity> playerDelete = playerRepository.findOneByLastNameIgnoreCase(lastName);
-        if (playerDelete.isEmpty()) {
-            log.warn("Player to delete with lastName={} could not be found", lastName);
-            throw new PlayerNotFoundException(lastName);
-        }
-
         try {
+            Optional<PlayerEntity> playerDelete = playerRepository.findOneByLastNameIgnoreCase(lastName);
+            if (playerDelete.isEmpty()) {
+                log.warn("Player to delete with lastName={} could not be found", lastName);
+                throw new PlayerNotFoundException(lastName);
+            }
+
             playerRepository.delete(playerDelete.get());
 
             RankingCalculator rankingCalculator = new RankingCalculator(playerRepository.findAll());
