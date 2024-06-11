@@ -51,7 +51,7 @@ public class PlayerService {
         try {
             Optional<PlayerEntity> player = playerRepository.findOneByLastNameIgnoreCase(lastName);
             if (player.isEmpty()) {
-                log.warn("Player to retrieve with lastName={} could not be found", lastName);
+                log.warn("Could not find player with lastName={}", lastName);
                 throw new PlayerNotFoundException(lastName);
             }
             return new Player(
@@ -61,7 +61,7 @@ public class PlayerService {
                     new Rank(player.get().getRank(), player.get().getPoints())
             );
         } catch (DataAccessException e) {
-            log.error("Could not retrieve player with lastName={}", lastName);
+            log.error("Could not find player with lastName={}", lastName, e);
             throw new PlayerDataRetrievalException(e);
         }
     }
@@ -100,7 +100,7 @@ public class PlayerService {
         try {
             Optional<PlayerEntity> playerToUpdate = playerRepository.findOneByLastNameIgnoreCase(playerToSave.lastName());
             if (playerToUpdate.isEmpty()) {
-                log.warn("Player to update with lastName={} could not be found", playerToSave.lastName());
+                log.warn("Could not find player to update with lastName={}", playerToSave.lastName());
                 throw new PlayerNotFoundException(playerToSave.lastName());
             }
 
@@ -125,7 +125,7 @@ public class PlayerService {
         try {
             Optional<PlayerEntity> playerDelete = playerRepository.findOneByLastNameIgnoreCase(lastName);
             if (playerDelete.isEmpty()) {
-                log.warn("Player to delete with lastName={} could not be found", lastName);
+                log.warn("Could not find player to delete with lastName={}", lastName);
                 throw new PlayerNotFoundException(lastName);
             }
 
