@@ -57,10 +57,11 @@ public class PlayerControllerTest {
     public void shouldReturn404NotFound_WhenPlayerDoesNotExist() throws Exception {
         // Given
         String playerToRetrieve = "doe";
-        Mockito.when(playerService.getByLastName(playerToRetrieve)).thenThrow(new PlayerNotFoundException("Player doe does not exist"));
+        Mockito.when(playerService.getByLastName(playerToRetrieve)).thenThrow(new PlayerNotFoundException(playerToRetrieve));
 
         // When / Then
         mockMvc.perform(get("/players/doe"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorDetails", CoreMatchers.is("Player with last name doe could not be found.")));
     }
 }
