@@ -3,6 +3,7 @@ package com.dyma.tennis.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -16,6 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@Profile("!test")
 public class SecurityConfiguration {
 
     @Autowired
@@ -28,8 +30,7 @@ public class SecurityConfiguration {
 
     @Bean
     public AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(dymaUserDetailsService);
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(dymaUserDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder);
 
         return new ProviderManager(authenticationProvider);
@@ -45,7 +46,7 @@ public class SecurityConfiguration {
                                         csp.policyDirectives("default-src 'self' data:; style-src 'self' 'unsafe-inline';")
                                 )
                                 .frameOptions(frameOptionsConfig -> frameOptionsConfig.deny())
-                                .permissionsPolicy(permissionsPolicyConfig -> permissionsPolicyConfig.policy(
+                                .permissionsPolicyHeader(permissionsPolicyConfig -> permissionsPolicyConfig.policy(
                                         "fullscreen=(self), geolocation=(), microphone=(), camera=()"
                                 ))
                 )

@@ -13,8 +13,6 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class PlayerServiceIntegrationTest {
@@ -83,9 +81,8 @@ public class PlayerServiceIntegrationTest {
         String playerToDelete = "DoeTest";
 
         // When / Then
-        Exception exception = assertThrows(PlayerNotFoundException.class, () -> {
-            playerService.delete(playerToDelete);
-        });
-        Assertions.assertThat(exception.getMessage()).isEqualTo("Player with last name DoeTest could not be found.");
+        Assertions.assertThatThrownBy(() -> playerService.delete(playerToDelete))
+                .isInstanceOf(PlayerNotFoundException.class)
+                .hasMessage("Player with last name DoeTest could not be found.");
     }
 }
