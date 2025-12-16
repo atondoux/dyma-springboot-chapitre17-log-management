@@ -3,65 +3,74 @@ package com.dyma.tennis.web;
 import com.dyma.tennis.data.PlayerList;
 import com.dyma.tennis.service.PlayerNotFoundException;
 import com.dyma.tennis.service.PlayerService;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.when;
 
 @WebMvcTest(controllers = PlayerController.class)
 public class PlayerControllerTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    private MockMvcTester mockMvc;
 
-    @MockBean
+    @MockitoBean
     private PlayerService playerService;
 
     @Test
-    public void shouldListAllPlayers() throws Exception {
+    public void shouldListAllPlayers() {
         // Given
-        Mockito.when(playerService.getAllPlayers()).thenReturn(PlayerList.ALL);
+        when(playerService.getAllPlayers()).thenReturn(PlayerList.ALL);
 
-        // When / Then
-        mockMvc.perform(get("/players"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(4)))
-                .andExpect(jsonPath("$[0].lastName", CoreMatchers.is("Nadal")))
-                .andExpect(jsonPath("$[1].lastName", CoreMatchers.is("Djokovic")))
-                .andExpect(jsonPath("$[2].lastName", CoreMatchers.is("Federer")))
-                .andExpect(jsonPath("$[3].lastName", CoreMatchers.is("Murray")));
+        // When
+        var response = mockMvc.get().uri("/players")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange();
+
+        // Then
+        var json = response.assertThat().hasStatus(HttpStatus.OK).bodyJson();
+        json.extractingPath("$.length()").isEqualTo(4);
+        json.extractingPath("$[0].lastName").isEqualTo("Nadal");
+        json.extractingPath("$[1].lastName").isEqualTo("Djokovic");
+        json.extractingPath("$[2].lastName").isEqualTo("Federer");
+        json.extractingPath("$[3].lastName").isEqualTo("Murray");
     }
 
     @Test
-    public void shouldRetrievePlayer() throws Exception {
+    public void shouldRetrievePlayer() {
         // Given
         String playerToRetrieve = "nadal";
-        Mockito.when(playerService.getByLastName(playerToRetrieve)).thenReturn(PlayerList.RAFAEL_NADAL);
+        when(playerService.getByLastName(playerToRetrieve)).thenReturn(PlayerList.RAFAEL_NADAL);
 
-        // When / Then
-        mockMvc.perform(get("/players/nadal"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lastName", CoreMatchers.is("Nadal")))
-                .andExpect(jsonPath("$.rank.position", CoreMatchers.is(1)));
+        // When
+        var response = mockMvc.get().uri("/players/nadal")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange();
+
+        // Then
+        var json = response.assertThat().hasStatus(HttpStatus.OK).bodyJson();
+        json.extractingPath("$.lastName").isEqualTo("Nadal");
+        json.extractingPath("$.rank.position").isEqualTo(1);
     }
 
     @Test
-    public void shouldReturn404NotFound_WhenPlayerDoesNotExist() throws Exception {
+    public void shouldReturn404NotFound_WhenPlayerDoesNotExist() {
         // Given
         String playerToRetrieve = "doe";
-        Mockito.when(playerService.getByLastName(playerToRetrieve)).thenThrow(new PlayerNotFoundException(playerToRetrieve));
+        when(playerService.getByLastName(playerToRetrieve)).thenThrow(new PlayerNotFoundException(playerToRetrieve));
 
-        // When / Then
-        mockMvc.perform(get("/players/doe"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.errorDetails", CoreMatchers.is("Player with last name doe could not be found.")));
+        // When
+        var response = mockMvc.get().uri("/players/doe")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange();
+
+        // Then
+        var json = response.assertThat().hasStatus(HttpStatus.NOT_FOUND).bodyJson();
+        json.extractingPath("$.errorDetails").isEqualTo("Player with last name doe could not be found.");
     }
 }
