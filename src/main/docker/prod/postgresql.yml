@@ -6,7 +6,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=5ML^Es#x%4U&DK6c
     ports:
-      - '5424:5432'
+      - "5424:5432"
     volumes:
       - dyma-postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
